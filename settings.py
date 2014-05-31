@@ -3,7 +3,6 @@ schema = 'public'
 server = 'localhost'
 driver = 'PostgreSQL'
 
-
 input_dirname = 'input/'
 log_dirname = 'logs/'
 schema_dirname = 'schema/'

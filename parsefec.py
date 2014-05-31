@@ -1,28 +1,34 @@
 '''
 
-parsefec is a command line tool and python library for downloading, parsing, and searching FEC Electronic filings <link>.
+parsefec is a command line tool and python library for downloading, parsing FEC Electronic filings.
 
-Usage
+Usage: parsefec.py [-h] [--outdir OUTDIR] [--inputdir INPUTDIR] [--mode MODE]
+                   [--delimiter DELIMITER]
 
-parsefec -i=<inputdir> -s=<schema.csv> -d=t -o=<outputdir> --logdir <logdir>
+Parser for FEC Electronic Filing data from OpenSecrets.org
 
-or
+optional arguments:
+  -h, --help            show this help message and exit
+  --inputdir INPUTDIR, -i INPUTDIR
+                        Directory of zip files from
+                        ftp://ftp.fec.gov/FEC/electronic/
+  --mode MODE, -m MODE  Mode of output: db, inserts (insert statements), text
+  --delimiter DELIMITER, -d DELIMITER
+                        Delimiter for text output. Use python escapes:
+                        --delimiter='\t'
+
+Or:
 
 parsefec | csvkit | psql
 
-or 
+
+As a library: 
 
 import parsefec
 
 parsefec.parseFile()
 parsefec.downloadRange()
 
-
-Install as library
-
-pip install git:
-
-Install command line
 
 
 '''
@@ -31,7 +37,6 @@ import zipfile
 import os.path
 import csv
 import sqlite3
-import pyodbc
 import datetime
 import sys
 from getpass import getpass
@@ -47,7 +52,7 @@ FS = '\x1C' # File separator character, used for delimiter in input[
 
 def writeOut(statement, dbcursor=None):
 
-    if args.mode == 'DB':
+    if args.mode == 'db':
         try:
             dbcursor.execute(statement)
             dbcursor.commit()
@@ -63,10 +68,10 @@ def parseFile(fname):
 
     dbcursor = None
 
-    if args.mode == 'DB': 
+    if args.mode == 'db': 
         dbconnection = pyodbc.connect(DBCONNECTION)
         dbcursor = dbconnection.cursor()
-    elif args.mode == 'INSERTS':
+    elif args.mode == 'inserts':
         writeOut('INSERT INTO {}.{}.[{}] VALUES (\'{}\', \'{}\')'.format(database, schema, 'FilesProcessed', fname, datetime.date.today().strftime("%m/%d/%y")))    
     else:
         writeOut(args.delimiter.join(['FilesProcessed', fname, datetime.date.today().strftime("%m/%d/%y")]))    
@@ -162,7 +167,7 @@ def parseFile(fname):
 
                     tableName = 'EF_Sch' + formName 
  
-                    if args.mode == 'INSERTS':
+                    if args.mode == 'inserts':
                         output = 'INSERT INTO {}.{}.[{}] VALUES ({})'.format(database, schema, tableName, insertClause)
                     else:
                         fullout = [tableName] + [s if s is not None else '' for s in la]
@@ -171,7 +176,7 @@ def parseFile(fname):
                     writeOut(output, dbcursor)
 
                 else:
-                    if args.mode == 'INSERTS':
+                    if args.mode == 'inserts':
                         fullLine = '\t'.join(la[1:])
                         fullLine = fullLine.replace('\'', '\'\'')
                         output = '''INSERT INTO {}.{}.[EF_NotProcessed] VALUES ('{}', '{}', '{}' )'''.format(database, schema, la[0], fullLine, today)
@@ -203,10 +208,11 @@ def processFile(f):
         filesprocessed.append(name)
 
         os.remove(input_dirname + name)
-        
-    print 'First file processed: ' + min(filesprocessed) + '\n'
-    print 'Last file processed: ' + max(filesprocessed) + '\n'
-    print 'Number of files processed: ' + str(len(filesprocessed)) + '\n\n'
+
+    if args.mode == 'db': 
+        print 'First file processed: ' + min(filesprocessed) + '\n'
+        print 'Last file processed: ' + max(filesprocessed) + '\n'
+        print 'Number of files processed: ' + str(len(filesprocessed)) + '\n\n'
     
 
 def processDir(dir):
@@ -214,46 +220,49 @@ def processDir(dir):
         if zipname[-3:] == 'zip':
             processFile(zipname)
    
+# Order by length so short matches don't take precidence.
+orderedFormCodes = OrderedDict(sorted(formCodes.items(), key=lambda t: -len(t[0])))
+
+# Import schema information
+conn = sqlite3.connect(":memory:")
+c = conn.cursor()
+c.execute("CREATE TABLE schemas (TABLE_NAME text,	COLUMN_NAME text,	TYPE_NAME text,	LENGTH integer, ORDINAL_POSITION integer);")
+dr = csv.DictReader(open(schema_dirname + 'electronic_filing_schemas_v8_1.csv'), delimiter='\t')
+to_db = [(i['TABLE_NAME'], i['COLUMN_NAME'], i['TYPE_NAME'], i['LENGTH'], i['ORDINAL_POSITION']) for i in dr]
+c.executemany("INSERT INTO schemas (TABLE_NAME, COLUMN_NAME, TYPE_NAME, LENGTH, ORDINAL_POSITION) values (?, ?, ?, ?, ?);", to_db)
+    
+schemas = {}
+    
+for formName in formCodes.values():
+    c.execute('SELECT TYPE_NAME, LENGTH FROM schemas where TABLE_NAME = "EF_Sch' + formName + '_Processed" ORDER BY ORDINAL_POSITION ASC')
+    schemas[formName] = c.fetchall()
+   
+parser = argparse.ArgumentParser(description='Parser for FEC Electronic Filing data from OpenSecrets.org')
+# Removed for now
+# parser.add_argument('--outdir', '-o', type=argparse.FileType('w'), default=sys.stdout, help=' output directory, defaults to standard out')
+
+parser.add_argument("--inputdir", '-i', dest='inputdir', help='Directory of zip files from ftp://ftp.fec.gov/FEC/electronic/', default='input')
+
+parser.add_argument("--mode", '-m', dest='mode', help='Mode of output: db, inserts (insert statements), text', default='text')
+
+parser.add_argument("--delimiter", '-d', dest='delimiter', help='Delimiter for text output.  Use python escapes: --delimiter=\'\\t\' ', default='\t')
+    
+args = parser.parse_args()
+args.delimiter = args.delimiter.decode('string_escape')
+
+if args.mode == 'db':
+    import pyodbc
+    # Some settings in settings.py
+    DBCONNECTION = 'DRIVER={};SERVER={};DATABASE={};UID=datauser;PWD={}'.format(driver, server, database, getpass())
+
 if __name__ == '__main__':
- 
     today = datetime.date.today().strftime("%m/%d/%Y")
     
     # Open error log
     log = open(log_dirname + 'Electronic_Filing_Log_' + str(datetime.date.today()) + '.log', 'a')
     clog = open(log_dirname + 'Electronic_Filing_Log_Correspondence_' + str(datetime.date.today()) + '.log', 'a')
 
-    # Order by length so short matches don't take precidence.
-    orderedFormCodes = OrderedDict(sorted(formCodes.items(), key=lambda t: -len(t[0])))
-
-    # Import schema information
-    conn = sqlite3.connect(":memory:")
-    c = conn.cursor()
-    c.execute("CREATE TABLE schemas (TABLE_NAME text,	COLUMN_NAME text,	TYPE_NAME text,	LENGTH integer, ORDINAL_POSITION integer);")
-    dr = csv.DictReader(open(schema_dirname + 'electronic_filing_schemas_v8_1.csv'), delimiter='\t')
-    to_db = [(i['TABLE_NAME'], i['COLUMN_NAME'], i['TYPE_NAME'], i['LENGTH'], i['ORDINAL_POSITION']) for i in dr]
-    c.executemany("INSERT INTO schemas (TABLE_NAME, COLUMN_NAME, TYPE_NAME, LENGTH, ORDINAL_POSITION) values (?, ?, ?, ?, ?);", to_db)
-    
-    schemas = {}
-    
-    for formName in formCodes.values():
-        c.execute('SELECT TYPE_NAME, LENGTH FROM schemas where TABLE_NAME = "EF_Sch' + formName + '_Processed" ORDER BY ORDINAL_POSITION ASC')
-        schemas[formName] = c.fetchall()
-   
-    parser = argparse.ArgumentParser(description='Usage: parsefec -i=inputfile.zip -s=schema.csv -d=tab -o=output --log log.txt')
-    parser.add_argument('--outdir', type=argparse.FileType('w'), default=sys.stdout, help=' output directory, defaults to standard out')
-
-    parser.add_argument("--inputdir", dest='inputdir', help='Directory of zip files from ftp://ftp.fec.gov/FEC/electronic/', default='input/')
-
-    parser.add_argument("--mode", dest='mode', help='Mode of output: DB, INSERTS (insert statements), TEXT', default='TEXT')
-
-    parser.add_argument("--delimiter", dest='delimiter', help='Delimiter for text output.  Default is tab.', default='\t')
-    args = parser.parse_args()
-
-    if args.mode == 'DB':
-        DBCONNECTION = 'DRIVER={};SERVER={};DATABASE={};UID=datauser;PWD={}'.format(driver, server, database, getpass())
-
     processDir(args.inputdir)
-
       
     log.close()
     clog.close()
