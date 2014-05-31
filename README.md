@@ -9,7 +9,7 @@ Parser for pulling data out of FEC Filings.  Open sourced for Transparency Camp 
 ####Command Line:
 
     # Text output using all defaults.  Uses directories and schema included in repo.
-    > python parsefec.py --mode=TEXT -d='\t'
+    > python parsefec.py --mode=text -d='\t'
     # Help
     > python parserfec.py --help
     
@@ -24,7 +24,7 @@ optional arguments:
   --inputdir INPUTDIR, -i INPUTDIR
                         Directory of zip files from
                         ftp://ftp.fec.gov/FEC/electronic/
-  --mode MODE, -m MODE  Mode of output: DB, INSERTS (insert statements), TEXT
+  --mode MODE, -m MODE  Mode of output: db, inserts (insert statements), text
   --delimiter DELIMITER, -d DELIMITER
                         Delimiter for text output. Use python escapes:
                         --delimiter='\t'
