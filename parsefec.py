@@ -42,25 +42,34 @@ from collections import OrderedDict
 
 from settings import *
 
-def writeToDB(statement, dbcursor):
-    print statement
-    '''
-    try:
-        dbcursor.execute(statement)
-        dbcursor.commit()
-    except Exception, e:
-        log.write('-- Insert Error:\n%s\n\n--%s%s' % (statement, e, errSep))
-    '''
+FS = '\x1C' # File separator character, used for delimiter in input[
+
+
+def writeOut(statement, dbcursor=None):
+
+    if args.mode == 'DB':
+        try:
+            dbcursor.execute(statement)
+            dbcursor.commit()
+        except Exception, e:
+            log.write('-- Insert Error:\n%s\n\n--%s%s' % (statement, e, errSep))
+    else:
+        print statement
+
 
 def parseFile(fname):
 
     f = open(input_dirname + fname, 'r')
 
-    #dbconnection = pyodbc.connect(DBCONNECTION)
-    #dbcursor = dbconnection.cursor()
     dbcursor = None
 
-    writeToDB('INSERT INTO {}.{}.[{}] VALUES (\'{}\', \'{}\')'.format(database, schema, 'FilesProcessed_Staging', fname, datetime.date.today().strftime("%m/%d/%y")), dbcursor)    
+    if args.mode == 'DB': 
+        dbconnection = pyodbc.connect(DBCONNECTION)
+        dbcursor = dbconnection.cursor()
+    elif args.mode == 'INSERTS':
+        writeOut('INSERT INTO {}.{}.[{}] VALUES (\'{}\', \'{}\')'.format(database, schema, 'FilesProcessed', fname, datetime.date.today().strftime("%m/%d/%y")))    
+    else:
+        writeOut(args.delimiter.join(['FilesProcessed', fname, datetime.date.today().strftime("%m/%d/%y")]))    
     
     textmode = False
     
@@ -79,11 +88,11 @@ def parseFile(fname):
             continue
 
         
-        if line[-1] == '\x1C':
+        if line[-1] == FS:
             line = line[:-1]
           
         # la (line array): Array of the current fields
-        la = line.strip().split('\x1C')
+        la = line.strip().split(FS)
 
         # Remove double quotes from double quote enclosed fields
         # TODO: Remove only first and last quotes.
@@ -152,15 +161,25 @@ def parseFile(fname):
                     insertClause = insertClause[2:]
 
                     tableName = 'EF_Sch' + formName 
-                    insertStatement = 'INSERT INTO {}.{}.[{}] VALUES ({})'.format(database, schema, tableName, insertClause)
+ 
+                    if args.mode == 'INSERTS':
+                        output = 'INSERT INTO {}.{}.[{}] VALUES ({})'.format(database, schema, tableName, insertClause)
+                    else:
+                        fullout = [tableName] + [s if s is not None else '' for s in la]
+                        output = args.delimiter.join(fullout)
 
-                    writeToDB(insertStatement, dbcursor)
+                    writeOut(output, dbcursor)
 
                 else:
-                    fullLine = '\t'.join(la[1:])
-                    fullLine = fullLine.replace('\'', '\'\'')
-                    insertStatement = '''INSERT INTO {}.{}.[EF_NotProcessed] VALUES ('{}', '{}', '{}' )'''.format(database, schema, la[0], fullLine, today)
-                    writeToDB(insertStatement, dbcursor)
+                    if args.mode == 'INSERTS':
+                        fullLine = '\t'.join(la[1:])
+                        fullLine = fullLine.replace('\'', '\'\'')
+                        output = '''INSERT INTO {}.{}.[EF_NotProcessed] VALUES ('{}', '{}', '{}' )'''.format(database, schema, la[0], fullLine, today)
+                    else:
+                        fullout = [tableName] + [s if s is not None else '' for s in la]
+                        output = args.delimiter.join(fullout)
+                   
+                    writeOut(output, dbcursor)
 
                     #log.write('-- Not Processed Error:\n%s%s' % (la, errSep))
                     break
@@ -198,9 +217,7 @@ def processDir(dir):
 if __name__ == '__main__':
  
     today = datetime.date.today().strftime("%m/%d/%Y")
-
-    DBCONNECTION = 'DRIVER={};SERVER={};DATABASE={};UID=datauser;PWD={}'.format(driver, server, database, getpass())
-
+    
     # Open error log
     log = open(log_dirname + 'Electronic_Filing_Log_' + str(datetime.date.today()) + '.log', 'a')
     clog = open(log_dirname + 'Electronic_Filing_Log_Correspondence_' + str(datetime.date.today()) + '.log', 'a')
@@ -223,11 +240,18 @@ if __name__ == '__main__':
         schemas[formName] = c.fetchall()
    
     parser = argparse.ArgumentParser(description='Usage: parsefec -i=inputfile.zip -s=schema.csv -d=tab -o=output --log log.txt')
-    parser.add_argument('--outdir', type=argparse.FileType('w'), default=sys.stdout, help=' output directory')
+    parser.add_argument('--outdir', type=argparse.FileType('w'), default=sys.stdout, help=' output directory, defaults to standard out')
 
-    parser.add_argument("--inputdir", dest='inputdir', help='Directory of zip files from ftp://ftp.fec.gov/FEC/electronic/', default='')
+    parser.add_argument("--inputdir", dest='inputdir', help='Directory of zip files from ftp://ftp.fec.gov/FEC/electronic/', default='input/')
 
+    parser.add_argument("--mode", dest='mode', help='Mode of output: DB, INSERTS (insert statements), TEXT', default='TEXT')
+
+    parser.add_argument("--delimiter", dest='delimiter', help='Delimiter for text output.  Default is tab.', default='\t')
     args = parser.parse_args()
+
+    if args.mode == 'DB':
+        DBCONNECTION = 'DRIVER={};SERVER={};DATABASE={};UID=datauser;PWD={}'.format(driver, server, database, getpass())
+
     processDir(args.inputdir)
 
       
