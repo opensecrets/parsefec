@@ -8,7 +8,9 @@ Parser for pulling data out of FEC Filings.  Open sourced for Transparency Camp 
 
 ####Command Line:
 
+    # Text output using all defaults.  Uses directories and schema included in repo.
     > python parsefec.py --mode=TEXT -d='\t'
+    # Help
     > python parserfec.py --help
     
 ```
