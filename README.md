@@ -19,8 +19,6 @@ Parser for FEC Electronic Filing data from OpenSecrets.org
 
 optional arguments:
   -h, --help            show this help message and exit
-  --outdir OUTDIR, -o OUTDIR
-                        output directory, defaults to standard out
   --inputdir INPUTDIR, -i INPUTDIR
                         Directory of zip files from
                         ftp://ftp.fec.gov/FEC/electronic/
