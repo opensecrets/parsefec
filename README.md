@@ -8,8 +8,29 @@ Parser for pulling data out of FEC Filings.  Open sourced for Transparency Camp 
 
 ####Command Line:
 
-    > python parsefec.py -i=<inputdir> -s=<schema.csv> -d=t -o=<outputdir> --logdir <logdir>
-    # Default directories and Schema 8.1 are included in the repo.
+    > python parsefec.py --mode=TEXT -d='\t'
+    > python parserfec.py --help
+    
+```
+usage: parsefec.py [-h] [--outdir OUTDIR] [--inputdir INPUTDIR] [--mode MODE]
+                   [--delimiter DELIMITER]
+
+Parser for FEC Electronic Filing data from OpenSecrets.org
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --outdir OUTDIR, -o OUTDIR
+                        output directory, defaults to standard out
+  --inputdir INPUTDIR, -i INPUTDIR
+                        Directory of zip files from
+                        ftp://ftp.fec.gov/FEC/electronic/
+  --mode MODE, -m MODE  Mode of output: DB, INSERTS (insert statements), TEXT
+  --delimiter DELIMITER, -d DELIMITER
+                        Delimiter for text output. Use python escapes:
+                        --delimiter='\t'
+```
+
+
 
 ####As a library (in development 5/31/14):
 
