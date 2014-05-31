@@ -9,7 +9,7 @@ Parser for pulling data out of FEC Filings.  Open sourced for Transparency Camp 
 ####Command Line:
 
     > python parsefec.py -i=<inputdir> -s=<schema.csv> -d=t -o=<outputdir> --logdir <logdir>
-    # Defaults directories and Schema 8.1 are included in the repo.
+    # Default directories and Schema 8.1 are included in the repo.
 
 ####As a library (in development 5/31/14):
 
