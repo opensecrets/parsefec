@@ -32,13 +32,12 @@ optional arguments:
 
 
 
-####As a library (in development 5/31/14):
+####As a library (in development):
 
 ```python
 import parsefec
 
-parsefec.parseFile(<fname or handle>)
-parsefec.downloadRange(datefrom, dateto)
+parsefec.parseDir('input')
 
 ```
 
