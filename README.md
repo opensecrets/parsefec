@@ -60,7 +60,7 @@ The FEC includes official correspondence from committees in the data as multi-li
 
 #Logs
 
-Any errors such as truncation of a field, an unrecognized form code, data type errors that occur in the data such as poorly formed dates, are stored in a directory (by default, the "logs" directory) with the date the script was executed.  Any subsequent runs of the script will append to the day's file.  Deleting it, or the correspondence log, will not cause errors.
+Any errors such as truncation of a field, an unrecognized form code, and data type errors that occur in the data such as poorly formed dates are stored in a directory (by default, the "logs" directory) with the date the script was executed.  Any subsequent runs of the script will append to the day's file.  Deleting it, or the correspondence log, will not cause errors.
 
 #Similar Projects
 
