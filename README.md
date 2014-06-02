@@ -71,6 +71,7 @@ ParseFEC is one of several FEC Electronic Filing Parsers available from the [NYT
 
 * Output to separate files for each form
 * Automatic download from ftp.fec.gov/FEC/electronic/
+* Unit tests
 
 
 
