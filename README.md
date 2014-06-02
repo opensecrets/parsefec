@@ -4,6 +4,19 @@ parsefec
 Parser for pulling data out of FEC Filings.  Open sourced for Transparency Camp 2014
 
 
+#Background
+
+The Federal Election Commission releases campaign finance disclosure data on its (web site)[http://www.fec.gov/finance/disclosure/ftpefile.shtml] for non-Senate federal candidates.  Each file is a zip-compressed archive of .FEC files.  The .FEC format is a plain text, file separator character (ASCII 28) delimited file where each row represents a required FEC disclosure form.  
+
+There are currently (47 possible forms and schedules)[http://www.fec.gov/info/forms.shtml] any line in the files could represent.  The name of the form for the row is in the first few characters of the row.  
+
+parsefec is variation on a script we use at OpenSecrets to load these files into a database.  Some functionality will be more useful to reporters and researchers doing small downloads without a database so we've made an effort to include those types of features.  From the command line, the ```--mode``` parameter controls output in text, insert clauses for use in datbases where direct access is not available, or through pyodbc.  The values for mode are ```--mode=text```, ```--mode=inserts```, and ```--mode=db``` respectively.
+
+All of the default settings and directories are in the repo including a small zip file.  If you download the repository and run ```python parsefec.py``` you should see text output.  The only requirement is argparse (```pip install argparse```) for text output.  
+
+For more advanced settings, see settings.py where you can choose a database driver, which forms to process, input/output directories and others as time goes on.
+
+
 #Usage
 
 ####Command Line:
@@ -41,7 +54,20 @@ parsefec.parseDir('input')
 
 ```
 
+
+#Similar Projects
+
 ParseFEC is one of several FEC Electronic Filing Parsers available from the [NYT](https://github.com/NYTimes/Fech), [USA Today](https://github.com/cschnaars/FEC-Scraper), and [The Sunlight Foundation](https://github.com/jsfenfen/read_FEC).
+
+
+#Roadmap
+
+* Output to separate files for each form
+* Automatic download from ftp.fec.gov/FEC/electronic/
+
+
+
+
 
 
 
