@@ -64,7 +64,7 @@ Any errors such as truncation of a field, an unrecognized form code, and data ty
 
 #Similar Projects
 
-ParseFEC is one of several FEC Electronic Filing Parsers available from the [NYT](https://github.com/NYTimes/Fech), [USA Today](https://github.com/cschnaars/FEC-Scraper), and [The Sunlight Foundation](https://github.com/jsfenfen/read_FEC).
+ParseFEC is one of several FEC Electronic Filing parsers available from the [NYT](https://github.com/NYTimes/Fech), [USA Today](https://github.com/cschnaars/FEC-Scraper), and [The Sunlight Foundation](https://github.com/jsfenfen/read_FEC).
 
 
 #Roadmap
