@@ -1,7 +1,7 @@
 parsefec
 ========
 
-Parser for pulling data out of FEC Filings.  Open sourced for Transparency Camp 2014
+Parser for pulling data out of FEC filings.  Open sourced for Transparency Camp 2014.
 
 
 #Background
@@ -56,11 +56,11 @@ parsefec.parseDir('input')
 
 #Correspondence Data
 
-The FEC includes official correspondence from committees in the data as multi-line text documents marked by "[BEGINTEXT]" and "[ENDTEXT]."  These documents are saved by default in the logs directory.
+The FEC includes official correspondence from committees in the data as multi-line text documents marked by ```[BEGINTEXT]``` and ```[ENDTEXT]```.  These documents are saved by default in the logs directory.
 
 #Logs
 
-Any errors such as truncation of a field, an unrecognized form code, and data type errors that occur in the data such as poorly formed dates are stored in a directory (by default, the "logs" directory) with the date the script was executed.  Any subsequent runs of the script will append to the day's file.  Deleting it, or the correspondence log, will not cause errors.
+Any errors such as truncation of a field, an unrecognized form code, and data type errors that occur in the data such as poorly formed dates are stored in a directory with the date the script was executed.  Any subsequent runs of the script will append to the day's file.  Deleting it, or the correspondence log, will not cause errors.
 
 #Similar Projects
 
