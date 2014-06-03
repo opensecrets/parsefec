@@ -1,0 +1,6 @@
+928571.FEC	SD10	C00367821	VN5Y09H5YB3	IND		Michaud	Michael	H.			3 Birch St		East Millinocket	ME	044301001	Reimbursement for parking	-0.10	0.00	0.00	-0.10
+928571.FEC	SD10	C00367821	VN5Y09H5XR3	ORG	Treasurer, State Of Maine						39 State House Sta		Augusta	ME	04333	Photocopies	-0.30	0.00	0.00	-0.30
+928571.FEC	SD10	C00367821	VN5Y09H5XS1	ORG	Treasurer, State Of Maine						39 State House Sta		Augusta	ME	04333	Photocopies	-0.40	0.00	0.00	-0.40
+928584.FEC	SD10	C00509422	PAYD2164	ORG	Public Square Partners						1127 11th St., #548		Sacramento	CA	95814	Printing, postage	2856.31	0.00	2856.31	0.00
+928584.FEC	SD10	C00509422	PAYD2254	ORG	Public Square Partners						1127 11th St., #548		Sacramento	CA	95814	Signs	0.00	4628.89	0.00	4628.89
+928584.FEC	SD10	C00509422	PAYD1769	ORG	Sullivan and Assoc., PLC						601 Pennsylvania Ave. NW #900		WASHINGTON	DC	20004	Legal services	6120.00	0.00	6120.00	0.00

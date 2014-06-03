@@ -1,0 +1,6 @@
+928511.FEC	F57	C90014838	F57.000001	ORG	Black Rock Group, LLC						66 Canal Center Plaza	Suite 555	Alexandria	VA	22314	P2014		20140528	16505.38	267794.38	Consulting - "Future" TV Advertisement	004		S	S0SC00149	Graham	Lindsey				S	SC		
+928511.FEC	F57	C90014838	F57.000002	ORG	Main Street Media Group						PO Box 25093		Alexandria	VA	22313	P2014		20140528	251289.00	267794.38	"Future" TV Advertisement	004		S	S0SC00149	Graham	Lindsey				S	SC		
+928546.FEC	F57	C90012352	F57.000001	ORG	Spectrum Marketing Companies						95 Eddy Road, Suite 101		Manchester	NH	03102	P2014		20140527	2540.80	2540.80	Direct mail	004		S		MacArthur	Tom				H	NJ	03	
+928555.FEC	F57	C90012956	VN7C19SGQN6	ORG	Mission Control						114A Mansfield Hollow Rd		Mansfield Center	CT	062501316	P2014		20140527	3772.52	140416.46	Direct Mail of 'Magnifying Glass' - ESTIMATE			O	H8NJ09088	Lonegan	Steven				H	NJ	03
+928555.FEC	F57	C90012956	VN7C19SGQP4	ORG	Mission Control						114A Mansfield Hollow Rd		Mansfield Center	CT	062501316	P2014		20140527	11317.56	140416.46	Direct Mail of 'Magnifying Glass' - ESTIMATE			O	H4NJ03130	MacArthur	Tom				H	NJ	03
+928555.FEC	F57	C90012956	VN7C19SGQQ2	ORG	Mission Control						114A Mansfield Hollow Rd		Mansfield Center	CT	062501316	P2014		20140528	15090.08	140416.46	Direct Mail of 'New Years' - ESTIMATE			O	H4NJ03130	MacArthur	Tom				H	NJ	03
