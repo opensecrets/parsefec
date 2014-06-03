@@ -17,12 +17,10 @@ optional arguments:
                         Delimiter for text output. Use python escapes:
                         --delimiter='\t'
 
-Or:
-
-parsefec | csvkit | psql
 
 
-As a library: 
+
+As a library (in development): 
 
 import parsefec
 
@@ -34,50 +32,73 @@ parsefec.downloadRange()
 '''
 
 import zipfile
-import os.path
+import os
 import csv
 import sqlite3
 import datetime
 import sys
 from getpass import getpass
-
 import argparse
-
 from collections import OrderedDict
-
 from settings import *
 
+
 FS = '\x1C' # File separator character, used for delimiter in input[
+# modes
+DB = 'db'
+INSERTS = 'inserts'
+TEXT = 'text'
+# Not Processed
+NOT_PROCESSED = 'NotProcessed'
+
+today = datetime.date.today().strftime("%m/%d/%Y")
 
 
-def writeOut(statement, dbcursor=None):
-
-    if args.mode == 'db':
+def writeOut(statement, dbcursor=None, filename=None):
+    if args.mode == DB:
         try:
             dbcursor.execute(statement)
             dbcursor.commit()
         except Exception, e:
             log.write('-- Insert Error:\n%s\n\n--%s%s' % (statement, e, errSep))
+    elif args.mode == TEXT and filename is not None:
+            out = open(os.path.join(output_dirname, filename + '.txt'), 'a')
+            out.write(statement + '\n')
+            out.close()
     else:
         print statement
 
+def adaptAndWriteOutput(line, clause=None, filename=None, dbcursor=None):
+    if args.mode == INSERTS or args.mode == DB:
+        # Database or inserts
+        insert = 'INSERT INTO {}.{}.[{}] VALUES ({});'.format(database, schema, filename, clause)
+    else:  
+        # text or no mode
+        textout = [s if s is not None else '' for s in line]
+        output = args.delimiter.join(textout)
+
+    if args.mode == INSERTS:
+        writeOut(insert)
+    elif args.mode == TEXT:
+        writeOut(output, filename=filename)                   
+    elif args.mode == DB:
+        writeOut(output, dbcursor=dbcursor)
+    else:
+        writeOut(output) 
+
 
 def parseFile(fname):
-
-    f = open(input_dirname + fname, 'r')
+    f = open(os.path.join(input_dirname, fname), 'r')
 
     dbcursor = None
-
-    if args.mode == 'db': 
+    if args.mode == DB: 
         dbconnection = pyodbc.connect(DBCONNECTION)
         dbcursor = dbconnection.cursor()
-    elif args.mode == 'inserts':
-        writeOut('INSERT INTO {}.{}.[{}] VALUES (\'{}\', \'{}\')'.format(database, schema, 'FilesProcessed', fname, datetime.date.today().strftime("%m/%d/%y")))    
-    else:
-        writeOut(args.delimiter.join(['FilesProcessed', fname, datetime.date.today().strftime("%m/%d/%y")]))    
-    
-    textmode = False
-    
+
+    insertClause = '\'{}\', \'{}\''.format(fname, today)
+    adaptAndWriteOutput([fname, today], clause=insertClause, filename='FilesProcessed', dbcursor=dbcursor)                                      
+
+    textmode = False 
     for line in f:
         if line.strip() == '[ENDTEXT]':
             clog.write('%s\n\n%s' % (line, errSep))
@@ -122,7 +143,7 @@ def parseFile(fname):
                 la.insert(0, fname.upper())
 
                 # Insert row into table based on form_name
-                if formName != 'NotProcessed':
+                if formName != NOT_PROCESSED:
                     insertClause = ''
                     schemaInfo = schemas[formName]
 
@@ -144,7 +165,6 @@ def parseFile(fname):
                                 continue
                                 
                             # Truncate varchar and chars to length
-                            # TODO: Log exception
                             if coltype[0] in ['varchar', 'char'] and len(la[order]) > coltype[1]:
 
                                 la[order] = la[order][:coltype[1]]
@@ -156,8 +176,6 @@ def parseFile(fname):
                             elif coltype[0] == 'decimal' and la[order].strip() == '':
                                 insertClause += ', Null'
                             else:
-                                # TODO: Truncation is because current process overflows the variable after 
-                                # escaped quotes are put in.
                                 insertClause += ', \'' + la[order].replace('\'', '\'\'')  + '\''
                              
                     except Exception, e:
@@ -166,40 +184,25 @@ def parseFile(fname):
                     insertClause = insertClause[2:]
 
                     tableName = 'EF_Sch' + formName 
- 
-                    if args.mode == 'inserts':
-                        output = 'INSERT INTO {}.{}.[{}] VALUES ({})'.format(database, schema, tableName, insertClause)
-                    else:
-                        fullout = [tableName] + [s if s is not None else '' for s in la]
-                        output = args.delimiter.join(fullout)
 
-                    writeOut(output, dbcursor)
-
+                    adaptAndWriteOutput(la, clause=insertClause, filename=tableName, dbcursor=dbcursor)                                      
                 else:
-                    if args.mode == 'inserts':
-                        fullLine = '\t'.join(la[1:])
-                        fullLine = fullLine.replace('\'', '\'\'')
-                        output = '''INSERT INTO {}.{}.[EF_NotProcessed] VALUES ('{}', '{}', '{}' )'''.format(database, schema, la[0], fullLine, today)
-                    else:
-                        fullout = [tableName] + [s if s is not None else '' for s in la]
-                        output = args.delimiter.join(fullout)
-                   
-                    writeOut(output, dbcursor)
-
-                    #log.write('-- Not Processed Error:\n%s%s' % (la, errSep))
+                    insertClause = '\'{}\', \'{}\',\'{}\''.format(la[0], '\t'.join(la), today)
+                    adaptAndWriteOutput(la, clause=insertClause, filename='EF_NotProcessed', dbcursor=dbcursor)                                      
                     break
             
-                
-    #dbconnection.close()
+    if args.mode == DB:            
+        dbconnection.close()
+
     f.close()
 
 def processFile(f):
-    zfile = zipfile.ZipFile(input_dirname + f)
+    zfile = zipfile.ZipFile(os.path.join(input_dirname, f))
     
     filesprocessed = []
 
     for name in zfile.namelist():
-        fd = open(input_dirname + name,"w")
+        fd = open(os.path.join(input_dirname, name),"w")
         fd.write(zfile.read(name))
         fd.close()
 
@@ -207,9 +210,9 @@ def processFile(f):
 
         filesprocessed.append(name)
 
-        os.remove(input_dirname + name)
+        os.remove(os.path.join(input_dirname, name))
 
-    if args.mode == 'db': 
+    if args.mode == DB: 
         print 'First file processed: ' + min(filesprocessed) + '\n'
         print 'Last file processed: ' + max(filesprocessed) + '\n'
         print 'Number of files processed: ' + str(len(filesprocessed)) + '\n\n'
@@ -220,6 +223,37 @@ def processDir(dir):
         if zipname[-3:] == 'zip':
             processFile(zipname)
    
+  
+parser = argparse.ArgumentParser(description='Parser for FEC Electronic Filing data from OpenSecrets.org')
+
+parser.add_argument('--outdir', '-o', dest='outputdir', default=None, help='Output directory')
+
+parser.add_argument("--inputdir", '-i', dest='inputdir', default=None, help='Directory of zip files from ftp://ftp.fec.gov/FEC/electronic/')
+
+parser.add_argument("--logdir", '-l', dest='logdir', default=None, help='Directory to write error logs and correspondence logs')
+
+parser.add_argument("--schema", '-s', dest='fecschema', default=None, help='Directory of zip files from ftp://ftp.fec.gov/FEC/electronic/')
+
+parser.add_argument("--mode", '-m', dest='mode', default=TEXT, help='Mode of output: db, inserts (insert statements), text')
+
+parser.add_argument("--delimiter", '-d', dest='delimiter', default='\t', help='Delimiter for text output.  Use python escapes: --delimiter=\'\\t\' ')
+    
+args = parser.parse_args()
+args.delimiter = args.delimiter.decode('string_escape')
+
+# Overwrite defaults
+if args.outputdir is not None:
+    output_dirname = args.outputdir
+
+if args.inputdir is not None:
+    input_dirname = args.inputdir
+
+if args.logdir is not None:
+    log_dirname = args.logdir
+
+if args.fecschema is not None:
+    fec_schema = args.fecschema
+
 # Order by length so short matches don't take precidence.
 orderedFormCodes = OrderedDict(sorted(formCodes.items(), key=lambda t: -len(t[0])))
 
@@ -227,7 +261,7 @@ orderedFormCodes = OrderedDict(sorted(formCodes.items(), key=lambda t: -len(t[0]
 conn = sqlite3.connect(":memory:")
 c = conn.cursor()
 c.execute("CREATE TABLE schemas (TABLE_NAME text,	COLUMN_NAME text,	TYPE_NAME text,	LENGTH integer, ORDINAL_POSITION integer);")
-dr = csv.DictReader(open(schema_dirname + 'electronic_filing_schemas_v8_1.csv'), delimiter='\t')
+dr = csv.DictReader(open(fec_schema), delimiter='\t')
 to_db = [(i['TABLE_NAME'], i['COLUMN_NAME'], i['TYPE_NAME'], i['LENGTH'], i['ORDINAL_POSITION']) for i in dr]
 c.executemany("INSERT INTO schemas (TABLE_NAME, COLUMN_NAME, TYPE_NAME, LENGTH, ORDINAL_POSITION) values (?, ?, ?, ?, ?);", to_db)
     
@@ -236,19 +270,8 @@ schemas = {}
 for formName in formCodes.values():
     c.execute('SELECT TYPE_NAME, LENGTH FROM schemas where TABLE_NAME = "EF_Sch' + formName + '_Processed" ORDER BY ORDINAL_POSITION ASC')
     schemas[formName] = c.fetchall()
-   
-parser = argparse.ArgumentParser(description='Parser for FEC Electronic Filing data from OpenSecrets.org')
-# Removed for now
-# parser.add_argument('--outdir', '-o', type=argparse.FileType('w'), default=sys.stdout, help=' output directory, defaults to standard out')
+ 
 
-parser.add_argument("--inputdir", '-i', dest='inputdir', help='Directory of zip files from ftp://ftp.fec.gov/FEC/electronic/', default='input')
-
-parser.add_argument("--mode", '-m', dest='mode', help='Mode of output: db, inserts (insert statements), text', default='text')
-
-parser.add_argument("--delimiter", '-d', dest='delimiter', help='Delimiter for text output.  Use python escapes: --delimiter=\'\\t\' ', default='\t')
-    
-args = parser.parse_args()
-args.delimiter = args.delimiter.decode('string_escape')
 
 if args.mode == 'db':
     import pyodbc
@@ -256,11 +279,10 @@ if args.mode == 'db':
     DBCONNECTION = 'DRIVER={};SERVER={};DATABASE={};UID=datauser;PWD={}'.format(driver, server, database, getpass())
 
 if __name__ == '__main__':
-    today = datetime.date.today().strftime("%m/%d/%Y")
     
     # Open error log
-    log = open(log_dirname + 'Electronic_Filing_Log_' + str(datetime.date.today()) + '.log', 'a')
-    clog = open(log_dirname + 'Electronic_Filing_Log_Correspondence_' + str(datetime.date.today()) + '.log', 'a')
+    log = open(os.path.join(log_dirname, 'Electronic_Filing_Log_' + str(datetime.date.today()) + '.log'), 'a')
+    clog = open(os.path.join(log_dirname, 'Electronic_Filing_Log_Correspondence_' + str(datetime.date.today()) + '.log'), 'a')
 
     processDir(args.inputdir)
       
