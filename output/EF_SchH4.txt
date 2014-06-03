@@ -1,3 +1,0 @@
-928494.FEC	H4	C00114850	H4.4115			ORG	Arvest Bank						6300 Nall Avenue		Mission	KS	66202	Administrative	20140131	30.00	0.00	30.00	30.00	Bank ServiceCharge		X							
-928494.FEC	H4	C00114850	H4.4116			ORG	Arvest Bank						6300 Nall Avenue		Mission	KS	66202	Administrative	20140228	30.00	0.00	30.00	60.00	Bank Service Charge		X							
-928494.FEC	H4	C00114850	H4.4117			ORG	Arvest Bank						6300 Nall Avenue		Mission	KS	66202	Administrative	20140331	20.00	0.00	20.00	80.00	Bank Service Charge		X							
