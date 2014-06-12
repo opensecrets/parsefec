@@ -148,7 +148,7 @@ def parseFile(fname):
                     schemaInfo = schemas[formName]
 
                     if len(schemaInfo) + 1 < len(la):
-                        log.write('-- Schema does not match input line: %s\n%\n--%s%s' % (formName, la, schemaInfo, errSep))
+                        log.write('-- Schema does not match input line: %s\n%s\n--%s%s' % (formName, la, schemaInfo, errSep))
                         break
                     # If columns are missing from end of input add 
                     # same number of None elements to end of Array.
